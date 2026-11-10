@@ -1,0 +1,25 @@
+PASS main menu renders
+PASS controls dialog opens
+PASS start from controls dialog
+PASS browser keyboard move handlers reach simulation
+PASS browser jump key and gravity
+PASS pause freezes clock, gauge and movement
+PASS continue button restores game
+PASS survey keeps gauge ticking
+PASS pause cannot bypass mandatory survey
+PASS all three real survey buttons return to game
+PASS 95 to 60 toilet recovery and calm expression
+PASS toilet finishes and cannot be reused
+PASS failure cutscene reaches real result screen
+PASS game over has no continuing player physics
+PASS actual restart resets all run state
+PASS sound button toggles sound
+PASS touch pointer handlers reach simulation
+PASS full normal input-only route reaches CLEAR
+PASS victory data renders into result UI
+PASS best record persisted in LocalStorage
+NORMAL {"time":235.04166666661723,"gauge":69.12499999995805,"collisions":2,"jumps":32,"toilets":2,"rank":"A","surveyed":true,"states":["PLAYING","TOILET_EVENT","SURVEY"]}
+PASS full sprint route trades gauge for faster finish
+SPRINT {"time":143.06666666670088,"gauge":93.97999999998397,"collisions":0,"jumps":28,"toilets":2,"rank":"S","surveyed":true,"states":["PLAYING","TOILET_EVENT","SURVEY"]}
+PASS result main-menu button
+ALL 22 BROWSER CHECKS PASSED

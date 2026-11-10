@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f7f4e9">
+  <meta name="description" content="집까지 참아라! 귀여운 캐릭터와 함께 장애물을 넘어 집 화장실까지 달리는 무료 2D 횡스크롤 게임.">
+  <title>TOILET RUSH — 집까지 참아라!</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="scripts/engine.js"></script>
+  <script defer src="scripts/renderer.js"></script>
+  <script defer src="scripts/audio.js"></script>
+  <script defer src="scripts/app.js"></script>
+</head>
+<body>
+  <div class="page-shell">
+    <header class="site-header">
+      <a class="brand" href="./" aria-label="TOILET RUSH 메인 메뉴">
+        <svg viewBox="0 0 36 36" fill="none" aria-hidden="true"><rect x="4" y="4" width="28" height="28" rx="9" fill="#e98565"/><path d="M11 11h6v10h10c0 5-4 7-8 7h-4v-6c-3-1-4-4-4-7v-4Z" fill="#fff9e9"/><path d="M19 18h9v3H17" stroke="#233e3c" stroke-width="2" stroke-linecap="round"/><circle cx="14" cy="14" r="1" fill="#233e3c"/></svg>
+        <span>TOILET RUSH<small>A VERY URGENT ADVENTURE</small></span>
+      </a>
+      <div class="header-actions"><span class="version">VOL. 01 <i></i> ORIGINAL WEB GAME</span><button id="sound-toggle" class="icon-button" aria-label="사운드 끄기" title="사운드 켜기/끄기">♪</button><button id="fullscreen-toggle" class="icon-button" aria-label="전체 화면" title="전체 화면">⛶</button></div>
+    </header>
+
+    <main>
+      <div class="section-kicker"><span><i class="live-dot"></i> ONE WAY HOME. ZERO TIME TO WASTE.</span><span class="desktop-only">작은 모험, 아주 큰 위기.</span></div>
+      <section id="game-frame" class="game-frame" aria-label="TOILET RUSH 게임">
+        <canvas id="game-canvas" width="1280" height="720" aria-label="횡스크롤 게임 화면. 하단 조작 안내를 참고하세요."></canvas>
+
+        <div id="menu-screen" class="screen menu-screen">
+          <div class="menu-copy">
+            <div class="eyebrow"><span class="tiny-star">✳</span> 집까지 가는 가장 다급한 모험</div>
+            <h1>TOILET<br><span>RUSH<span class="title-dot">!</span></span></h1>
+            <p class="subtitle">집까지 참아라!</p>
+            <p class="intro">평화로운 동네. 익숙한 집으로 가는 길.<br>딱 하나, 내 배만 평화롭지 않다.</p>
+            <button id="start-button" class="button button-primary start-button">게임 시작 <span aria-hidden="true">→</span></button>
+            <button id="help-button" class="text-button">처음이신가요? 조작 방법 <span aria-hidden="true">↗</span></button>
+            <div class="menu-note"><span>3개의 동네</span><i>·</i><span>단 하나의 목표</span><i>·</i><span>약 3–5분</span></div>
+          </div>
+          <div class="character-note">“조금만 더… 집이 코앞이야!”<svg viewBox="0 0 45 38" aria-hidden="true"><path d="M3 3Q40 1 29 29m0 0-9-7m9 7 9-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+          <div class="menu-scene-label"><span class="live-dot"></span> 오늘도 무사 귀가를 꿈꾸며</div>
+          <div id="best-menu" class="best-menu"></div>
+        </div>
+
+        <div id="hud" class="hud" hidden>
+          <div class="hud-top">
+            <div class="gauge-panel"><div class="gauge-heading"><span id="emotion-label">아직은 괜찮아</span><strong><span id="gauge-number">25</span><small>%</small></strong></div><div id="gauge-track" class="gauge-track" role="progressbar" aria-label="급똥 게이지" aria-valuemin="0" aria-valuemax="100" aria-valuenow="25"><div id="gauge-fill"></div></div><span class="gauge-caption">급똥 주의보</span></div>
+            <div class="hud-stat"><span>달린 시간</span><strong id="time-value">00:00</strong></div>
+            <div class="hud-stat"><span>집까지</span><strong id="distance-value">420<small>m</small></strong></div>
+            <button id="pause-button" class="pause-button" aria-label="일시정지">Ⅱ</button>
+          </div>
+          <div class="route-line"><div class="route-track"><div id="route-fill"></div></div><span id="stage-label">01 골목길</span><span>⌂ HOME</span></div>
+        </div>
+
+        <div id="play-hint" class="play-hint" hidden></div>
+        <div id="toast" class="toast" role="status" hidden></div>
+
+        <div id="survey-screen" class="screen survey-screen" hidden>
+          <div class="survey-card" role="dialog" aria-modal="true" aria-labelledby="survey-title">
+            <div class="survey-heading"><span class="eyebrow">THE WORST POSSIBLE TIMING</span><div class="survey-tools"><span id="survey-count">01 / 03</span><button id="survey-pause" class="pause-button" aria-label="설문 일시정지">Ⅱ</button></div></div>
+            <div class="survey-tag">잠깐만요! 설문조사 1분만 부탁드립니다!</div>
+            <h2 id="survey-title"></h2>
+            <div id="survey-options" class="survey-options"></div>
+            <p class="survey-warning"><span class="live-dot"></span> 대답하는 동안에도 시간과 게이지는 흘러가요.</p>
+          </div>
+        </div>
+
+        <div id="pause-screen" class="screen modal-backdrop" hidden>
+          <div class="dialog-card pause-card" role="dialog" aria-modal="true" aria-labelledby="pause-title"><div class="eyebrow">TAKE A BREATH</div><h2 id="pause-title">잠깐, 숨 고르기.</h2><p>시간도, 급한 배도 잠시 멈췄어요.</p><div class="dialog-buttons"><button id="resume-button" class="button button-primary">계속하기 <span>→</span></button><button data-action="restart" class="button button-light">처음부터 다시하기</button><button id="pause-sound" class="button button-light">사운드 끄기</button><button data-action="menu" class="text-button">메인 메뉴</button></div></div>
+        </div>
+
+        <div id="toilet-caption" class="event-caption" hidden><span class="eyebrow">A SMALL MOMENT OF PEACE</span><h2>잠시만 실례할게요.</h2><p id="toilet-text">문이 닫히면, 드디어 안도의 시간.</p></div>
+        <div id="cutscene-caption" class="cutscene-caption" hidden><span id="cutscene-text"></span><button id="skip-button" class="text-button">연출 건너뛰기 →</button></div>
+
+        <div id="result-screen" class="screen result-screen" hidden>
+          <div class="result-title"><span id="result-eyebrow" class="eyebrow"></span><h2 id="result-title"></h2><p id="result-message"></p></div>
+          <div id="result-stats" class="result-stats"></div>
+          <div class="result-buttons"><button data-action="restart" class="button button-primary">다시 플레이 <span>↻</span></button><button data-action="menu" class="button button-light">메인 메뉴</button></div>
+        </div>
+
+        <div id="help-screen" class="screen modal-backdrop" hidden>
+          <div class="dialog-card help-card" role="dialog" aria-modal="true" aria-labelledby="help-title"><button id="help-close" class="close-button" aria-label="조작 방법 닫기">×</button><span class="eyebrow">YOUR SURVIVAL GUIDE</span><h2 id="help-title">집까지, 무사히.</h2><p>급똥 게이지가 100%가 되기 전에 집으로 돌아가세요.</p><div class="help-grid"><div><kbd>A</kbd><kbd>D</kbd><span>또는 ← → 이동</span></div><div><kbd>Space</kbd><span>점프 · +1.5%</span></div><div><kbd>Shift</kbd><span>전력 질주 · 추가 +0.5%/초</span></div><div><kbd>E</kbd><span>공중화장실 · −35%</span></div><div><kbd>P</kbd><kbd>Esc</kbd><span>일시정지</span></div></div><p class="help-tip">구멍은 점프로, 보행자는 타이밍으로! 공중화장실은 두 곳, 각각 한 번만 이용할 수 있어요. 설문조사에는 빠르게 답해주세요.</p><button id="help-play" class="button button-primary">알겠어요, 출발! <span>→</span></button></div>
+        </div>
+      </section>
+
+      <div id="touch-controls" class="touch-controls" hidden aria-label="터치 게임 조작"><div class="touch-group"><button data-input="left" aria-label="왼쪽 이동">◀</button><button data-input="right" aria-label="오른쪽 이동">▶</button></div><div class="touch-group"><button data-input="sprint" class="touch-sprint">질주</button><button data-input="interact" id="touch-interact">이용 E</button><button data-input="jump" class="touch-jump">점프 ↑</button></div></div>
+
+      <div class="below-game"><div class="control-legend"><span><kbd>←</kbd><kbd>→</kbd> 이동</span><span><kbd>SPACE</kbd> 점프</span><span><kbd>SHIFT</kbd> 질주</span><span><kbd>E</kbd> 화장실</span><span><kbd>ESC</kbd> 잠깐 쉬기</span></div><span class="save-note"><i class="live-dot"></i> 최고 기록은 이 브라우저에 저장돼요</span></div>
+      <div class="story-strip"><span class="strip-label">THE JOURNEY</span><div><b>01</b><span>익숙한 골목길</span></div><i>·······</i><div><b>02</b><span>수상하게 바쁜 번화가</span></div><i>·······</i><div><b>03</b><span>집 앞, 마지막 질주</span></div><span class="strip-home">⌂</span></div>
+    </main>
+    <footer><span>작은 발걸음에 담긴, 아주 절박한 이야기.</span><span>MADE FOR A LITTLE LAUGH <span class="footer-star">✳</span> TOILET RUSH © 2026</span></footer>
+  </div>
+  <noscript>이 게임을 플레이하려면 브라우저에서 JavaScript를 켜주세요.</noscript>
+</body>
+</html>
