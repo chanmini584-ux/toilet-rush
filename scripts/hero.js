@@ -23,13 +23,15 @@
     return '#EE6F5E';
   }
 
-  // TODO(찬민): 이 함수가 "게이지 -> 모습"의 핵심 규칙이다. 직접 고쳐 보자.
-  // tier 0 정상 / 1 불안 / 2 울먹 / 3 폭발 직전, lean = 몸이 앞으로 굽는 각도(도).
-  // 힌트: 지금은 구간별로 뚝뚝 끊긴다. 40~100%에서 lean이 부드럽게 늘게 바꿔 보자.
+  // 게이지 -> 모습의 핵심 규칙. tier 0 정상 / 1 불안 / 2 울먹 / 3 폭발 직전.
+  // lean(몸이 앞으로 굽는 각도)은 구간마다 끊기지 않고, 게이지가 오를수록 부드럽게 늘어난다.
   function gaugeLook(gauge) {
-    const tier = gauge >= 90 ? 3 : gauge >= 70 ? 2 : gauge >= 40 ? 1 : 0;
-    const lean = [6, 16, 24, 12][tier];
-    return { tier, lean, skin: tint(gauge) };
+    const g = clamp(gauge, 0, 100);
+    const tier = g >= 90 ? 3 : g >= 70 ? 2 : g >= 40 ? 1 : 0;
+    const lean = g < 40 ? mix(4, 8, g / 40)          // 정상: 거의 곧게
+      : g < 90 ? mix(8, 26, (g - 40) / 50)            // 불안~울먹: 점점 굽는다
+        : mix(26, 14, (g - 90) / 10);                 // 폭발 직전: 몸이 뒤틀리며 오히려 펴진다
+    return { tier, lean, skin: tint(g) };
   }
 
   const shape = (ctx, d, fill, lw = 4) => {

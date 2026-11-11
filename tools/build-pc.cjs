@@ -61,21 +61,30 @@ function run(command, args) {
   if (result.status !== 0) throw new Error(command + ' failed:\n' + result.stdout + result.stderr);
 }
 
-if (process.platform !== 'win32') throw new Error('Build the Windows EXE on Windows using the built-in .NET Framework compiler.');
+const isWindows = process.platform === 'win32';
 const htmlFile = path.join(staging, 'ToiletRush.html');
 const exeFile = path.join(staging, 'ToiletRush.exe');
 const icoFile = path.join(build, 'toilet-rush.ico');
 fs.writeFileSync(htmlFile, bundleHtml(), 'utf8');
 makeIcon(icoFile);
-const csc = [
-  path.join(process.env.WINDIR || 'C:\\Windows', 'Microsoft.NET', 'Framework64', 'v4.0.30319', 'csc.exe'),
-  path.join(process.env.WINDIR || 'C:\\Windows', 'Microsoft.NET', 'Framework', 'v4.0.30319', 'csc.exe')
-].find(candidate => fs.existsSync(candidate));
-if (!csc) throw new Error('Windows .NET Framework compiler was not found.');
-run(csc, ['/nologo', '/target:winexe', '/platform:anycpu', '/optimize+', '/utf8output', '/win32icon:' + icoFile,
-  '/reference:System.dll', '/reference:System.Core.dll', '/reference:System.Drawing.dll', '/reference:System.Windows.Forms.dll',
-  '/resource:' + htmlFile + ',ToiletRush.Game.html', '/out:' + exeFile, path.join(__dirname, 'pc-launcher.cs')]);
-run(exeFile, ['--self-test']);
+// Windows: 내장 .NET Framework csc.exe / 그 외(Linux·macOS): Mono mcs로 같은 Windows EXE를 만든다.
+const refs = ['System.dll', 'System.Core.dll', 'System.Drawing.dll', 'System.Windows.Forms.dll'];
+if (isWindows) {
+  const csc = [
+    path.join(process.env.WINDIR || 'C:\\Windows', 'Microsoft.NET', 'Framework64', 'v4.0.30319', 'csc.exe'),
+    path.join(process.env.WINDIR || 'C:\\Windows', 'Microsoft.NET', 'Framework', 'v4.0.30319', 'csc.exe')
+  ].find(candidate => fs.existsSync(candidate));
+  if (!csc) throw new Error('Windows .NET Framework compiler was not found.');
+  run(csc, ['/nologo', '/target:winexe', '/platform:anycpu', '/optimize+', '/utf8output', '/win32icon:' + icoFile,
+    ...refs.map(r => '/reference:' + r),
+    '/resource:' + htmlFile + ',ToiletRush.Game.html', '/out:' + exeFile, path.join(__dirname, 'pc-launcher.cs')]);
+  run(exeFile, ['--self-test']);
+} else {
+  run('mcs', ['-nologo', '-target:winexe', '-platform:anycpu', '-optimize+', '-sdk:4.5', '-win32icon:' + icoFile,
+    ...refs.map(r => '-reference:' + r),
+    '-resource:' + htmlFile + ',ToiletRush.Game.html', '-out:' + exeFile, path.join(__dirname, 'pc-launcher.cs')]);
+  run('mono', [exeFile, '--self-test']);
+}
 const instructions = `TOILET RUSH — 집까지 참아라! v${version}\r\n\r\n1. ToiletRush.exe를 더블클릭하세요.\r\n2. PC의 기본 브라우저에서 게임이 열립니다. 게임 시작을 누르세요.\r\n3. A/D 또는 방향키: 이동, Space: 점프, Shift: 질주, E: 화장실, P/Esc: 일시정지.\r\n\r\n게임 데이터가 EXE 안에 들어 있어 다른 파일 없이 EXE 하나만 복사해도 됩니다.\r\n인터넷 연결, Node.js 설치, 관리자 권한이 필요하지 않습니다.\r\nWindows의 .NET Framework 4.x와 최신 PC 브라우저를 사용합니다.\r\n\r\n게임은 http://127.0.0.1:41731/ 에서 이 PC에만 제공됩니다.\r\n최고 기록은 이 주소를 여는 브라우저에 저장됩니다.\r\n다시 실행하면 기존 게임을 다시 엽니다.\r\n완전히 종료: 작업 표시줄 알림 영역의 게임 아이콘 우클릭 → 게임 완전히 종료.\r\n\r\nToiletRush.html은 EXE 없이 브라우저로 열 수 있는 단일 파일 대안입니다.\r\nHTML 직접 열기의 기록 저장 여부는 브라우저의 로컬 파일 정책에 따라 다릅니다.\r\n이 자체 제작 EXE에는 유료 코드 서명이 포함되어 있지 않습니다.\r\n\r\n소스: https://github.com/chanmini584-ux/toilet-rush\r\n`;
 fs.writeFileSync(path.join(staging, '사용방법.txt'), '\ufeff' + instructions.replace(/\r\n/g, '\n'), 'utf8');
 for (const file of ['ToiletRush.exe', 'ToiletRush.html', '사용방법.txt']) fs.copyFileSync(path.join(staging, file), path.join(output, file));

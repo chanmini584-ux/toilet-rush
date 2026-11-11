@@ -1755,6 +1755,7 @@ footer>span:last-child {
 
 
 
+
 </head>
 <body>
   <div class="page-shell">
@@ -2208,6 +2209,192 @@ window.__RUSH_BUNDLED_QA__ = true;
 });
 
 ;
+/* TOILET RUSH — 주인공(늘어진 팔다리 카툰) Canvas 렌더링. DOM 없이 ctx만 받는다. */
+(function (root) {
+  'use strict';
+
+  const INK = '#2b2233';
+  const SHIRT = '#F28C28', SHORTS = '#6B4A2E', SHOE = '#D9342B', TEAR = '#9BD9F0';
+  const K = 0.5; // 시트 좌표(키 약 250) -> 게임 크기(키 약 125)
+
+  const mix = (a, b, t) => a + (b - a) * t;
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const rgb = hex => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
+  const lerpColor = (a, b, t) => {
+    const x = rgb(a), y = rgb(b);
+    return '#' + x.map((v, i) => Math.round(mix(v, y[i], t)).toString(16).padStart(2, '0')).join('').toUpperCase();
+  };
+
+  // 게이지(%) -> 피부색. 구간 사이를 연속으로 이어 90%에서 색이 갑자기 튀지 않게 한다.
+  function tint(gauge) {
+    const g = clamp(gauge, 0, 100);
+    if (g < 40) return lerpColor('#F4BE92', '#F2B48A', g / 40);
+    if (g < 70) return lerpColor('#F2B48A', '#F09E82', (g - 40) / 30);
+    if (g < 90) return lerpColor('#F09E82', '#EE6F5E', (g - 70) / 20);
+    return '#EE6F5E';
+  }
+
+  // 게이지 -> 모습의 핵심 규칙. tier 0 정상 / 1 불안 / 2 울먹 / 3 폭발 직전.
+  // lean(몸이 앞으로 굽는 각도)은 구간마다 끊기지 않고, 게이지가 오를수록 부드럽게 늘어난다.
+  function gaugeLook(gauge) {
+    const g = clamp(gauge, 0, 100);
+    const tier = g >= 90 ? 3 : g >= 70 ? 2 : g >= 40 ? 1 : 0;
+    const lean = g < 40 ? mix(4, 8, g / 40)          // 정상: 거의 곧게
+      : g < 90 ? mix(8, 26, (g - 40) / 50)            // 불안~울먹: 점점 굽는다
+        : mix(26, 14, (g - 90) / 10);                 // 폭발 직전: 몸이 뒤틀리며 오히려 펴진다
+    return { tier, lean, skin: tint(g) };
+  }
+
+  const shape = (ctx, d, fill, lw = 4) => {
+    const p = new Path2D(d);
+    if (fill) { ctx.fillStyle = fill; ctx.fill(p); }
+    ctx.lineWidth = lw; ctx.strokeStyle = INK; ctx.stroke(p);
+  };
+  const line = (ctx, d, lw = 4, color = INK) => {
+    ctx.lineWidth = lw; ctx.strokeStyle = color; ctx.stroke(new Path2D(d));
+  };
+  const limb = (ctx, d, color, w = 8) => {
+    const p = new Path2D(d);
+    ctx.lineWidth = w + 5; ctx.strokeStyle = INK; ctx.stroke(p);
+    ctx.lineWidth = w; ctx.strokeStyle = color; ctx.stroke(p);
+  };
+  const dot = (ctx, x, y, r, fill, lw = 3.5) => {
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = fill; ctx.fill(); ctx.lineWidth = lw; ctx.strokeStyle = INK; ctx.stroke();
+  };
+  const drop = (ctx, x, y, s = 1, rot = 0) => {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot * Math.PI / 180); ctx.scale(s, s);
+    shape(ctx, 'M0,-12 C8,-2 9,6 0,9 C-9,6 -8,-2 0,-12Z', TEAR, 2.5);
+    ctx.restore();
+  };
+  const shoe = (ctx, x, y, r) => {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(r * Math.PI / 180);
+    shape(ctx, 'M-14,-14 q6,-6 14,-2 q26,-6 30,10 q0,6 -6,6 h-38 q-6,-8 0,-20Z', SHOE, 4);
+    line(ctx, 'M-12,-2 h40', 3, '#FFFFFF');
+    ctx.restore();
+  };
+  const eye = (ctx, cx, cy, r, pr, px, py, shiny) => {
+    dot(ctx, cx, cy, r, '#FFFFFF', 4);
+    dot(ctx, cx + px, cy + py, pr, shiny ? '#3B2A1E' : INK, 0);
+    if (shiny) {
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath(); ctx.arc(cx + px - pr * .35, cy + py - pr * .4, pr * .38, 0, Math.PI * 2); ctx.fill();
+    }
+  };
+
+  function drawFace(ctx, tier, skin, time) {
+    const nose = () => shape(ctx, 'M24,-186 q26,-4 28,10 q0,12 -22,8', skin, 4);
+    if (tier === 0) {
+      eye(ctx, -14, -204, 19, 5, 7, 2); eye(ctx, 22, -206, 21, 5, 8, 2);
+      shape(ctx, 'M-33,-204 a19,19 0 0 1 38,0Z', skin, 4); shape(ctx, 'M1,-206 a21,21 0 0 1 42,0Z', skin, 4);
+      nose();
+      line(ctx, 'M-26,-164 Q8,-128 40,-168'); line(ctx, 'M-30,-168 l6,6 M44,-172 l-6,6');
+      shape(ctx, 'M-2,-149 v12 h10 v-13 M8,-150 v13 h10 v-15', '#FFFFFF', 3.5);
+    } else if (tier === 1) {
+      eye(ctx, -16, -204, 20, 3, 6, 4); eye(ctx, 24, -208, 25, 3.5, 8, 4); nose();
+      line(ctx, 'M-40,-236 l22,-10 M10,-250 l28,6');
+      shape(ctx, 'M-24,-160 q8,-8 16,0 q8,8 16,0 q8,-8 16,0 q6,6 12,2 v14 q-6,4 -12,-2 q-8,-8 -16,0 q-8,8 -16,0 q-8,-8 -16,0Z', '#FFFFFF', 3.5);
+      const b = Math.sin(time * 5) * 3;
+      drop(ctx, 58, -232 + b, .9, -20); drop(ctx, -58, -226 - b, .8, 20); drop(ctx, 66, -200 + b, .7, -10);
+    } else if (tier === 2) {
+      eye(ctx, -17, -204, 25, 13, 3, 2, true); eye(ctx, 27, -207, 28, 15, 3, 2, true); nose();
+      line(ctx, 'M-44,-232 l24,-14 M12,-252 l32,8');
+      ctx.fillStyle = 'rgba(224,88,78,.6)';
+      ctx.beginPath(); ctx.ellipse(-30, -170, 9, 5, 0, 0, Math.PI * 2); ctx.ellipse(34, -168, 9, 5, 0, 0, Math.PI * 2); ctx.fill();
+      line(ctx, 'M-18,-150 q6,-10 12,-2 q6,8 12,0 q6,-8 12,0 q6,8 12,-2'); line(ctx, 'M-4,-140 q8,6 16,0');
+      const b = (Math.sin(time * 6) + 1) * 4;
+      drop(ctx, -34, -170 + b, 1); drop(ctx, 46, -166 + b, 1.1); drop(ctx, 60, -236, .9, -20);
+    } else {
+      nose();
+      for (const d of ['M-30,-222 l-10,-22', 'M34,-226 l12,-26']) {
+        line(ctx, d, 12); line(ctx, d, 8, skin);
+      }
+      eye(ctx, -44, -256, 24, 3, 4, 3); eye(ctx, 50, -264, 29, 3.5, 5, 3);
+      for (const d of ['M-52,-240 Q-100,-300 -120,-190', 'M60,-240 Q112,-300 130,-190']) {
+        line(ctx, d, 12); line(ctx, d, 8, TEAR);
+      }
+      shape(ctx, 'M-30,-176 Q8,-190 42,-178 Q52,-110 8,-100 Q-36,-108 -30,-176Z', '#6E1E2A', 4);
+      shape(ctx, 'M-28,-172 Q8,-186 40,-174 l-2,12 Q8,-172 -26,-160Z', '#FFFFFF', 3);
+      shape(ctx, 'M-16,-116 q8,-22 26,-16 q18,-4 22,14 q6,16 -4,30 q-10,10 -22,0 q-10,6 -20,-6 q-6,-10 -2,-22Z', '#F07A8A', 3.5);
+    }
+  }
+
+  const POSES = new Set(['idle', 'run', 'sprint', 'walk', 'jump', 'land', 'hit']);
+
+  function draw(ctx, x, y, scale, gauge, pose, time, options = {}) {
+    const look = gaugeLook(gauge);
+    const skin = look.skin;
+    const running = pose === 'run' || pose === 'sprint' || pose === 'walk';
+    const tier = pose === 'hit' ? Math.max(1, look.tier) : look.tier;
+    const speed = pose === 'sprint' ? 17 : pose === 'walk' ? 7 : 12;
+    const amp = pose === 'sprint' ? 38 : 30;
+    const ph = time * speed;
+    const bob = running ? Math.abs(Math.sin(ph)) * 5 : Math.sin(time * 2.8) * 2;
+    const squash = pose === 'land' ? .88 : 1;
+
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(scale * K * (options.facing || 1), scale * K * squash);
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.fillStyle = 'rgba(43,34,51,.22)'; ctx.beginPath(); ctx.ellipse(0, 3, 52, 8, 0, 0, Math.PI * 2); ctx.fill();
+
+    // 다리: 달릴 때 발이 앞뒤로 흔들리고, 점프 땐 접힌다
+    const legs = [[-6, 0], [8, Math.PI]].map(([hx, off]) => {
+      let fx, fy;
+      if (pose === 'jump') { fx = hx < 0 ? -22 : 22; fy = hx < 0 ? -16 : -34; }
+      else if (running) { fx = hx + Math.sin(ph + off) * amp; fy = -Math.max(0, Math.cos(ph + off)) * 18; }
+      else { fx = hx < 0 ? -14 : 12; fy = 0; }
+      const knee = tier >= 2 && !running ? 0 : 14;
+      return { hx, fx, fy, d: `M${hx},-56 C${hx + (fx - hx) * .2 + knee},${-56 + (fy + 56) * .35} ${fx - 8},${fy - 22} ${fx},${fy - 8}` };
+    });
+    ctx.save(); ctx.translate(0, -bob * .4);
+    for (const l of legs) limb(ctx, l.d, skin, 8);
+    for (const l of legs) shoe(ctx, l.fx - 4, l.fy, running ? -Math.sin(ph + (l.hx < 0 ? 0 : Math.PI)) * 22 : 0);
+    ctx.restore();
+
+    // 허리춤 휴지 롤 + 뒤로 날리는 휴지 꼬리(주인공의 상징)
+    const w1 = Math.sin(time * 8) * (running ? 9 : 3), w2 = Math.sin(time * 8 + 1) * (running ? 9 : 3);
+    const tail = `M-28,${-62 - bob * .4} Q-70,${-70 + w1} -84,${-50 + w2} Q-98,${-36 - w1} -122,${-46 + w2}`;
+    line(ctx, tail, 17); line(ctx, tail, 12, '#FFFFFF');
+
+    ctx.save();
+    ctx.translate(0, -bob);
+    ctx.translate(0, -56); ctx.rotate((pose === 'hit' ? -12 : look.lean) * Math.PI / 180); ctx.translate(0, 56);
+    // 몸통
+    shape(ctx, 'M-24,-72 l4,22 h40 l4,-22Z', SHORTS, 4);
+    shape(ctx, 'M-16,-122 C-30,-100 -30,-80 -24,-70 H24 C30,-80 30,-100 16,-122Z', SHIRT, 4);
+    line(ctx, 'M-27,-92 H27 M-26,-82 H26', 4, '#FFF2C9');
+    dot(ctx, -26, -58, 13, '#FFFFFF', 3.5); dot(ctx, -26, -58, 5, '#C9A27A', 2.5);
+    // 팔
+    if (tier === 0 && pose !== 'jump') {
+      const sw = running ? Math.sin(ph) * 10 : 0;
+      limb(ctx, `M-16,-112 Q-44,${-104 + sw} -40,${-84 + sw} Q-38,-74 -48,${-70 + sw}`, skin, 7);
+      limb(ctx, `M16,-112 Q44,${-112 - sw} 48,${-128 - sw} Q50,-138 60,${-138 - sw}`, skin, 7);
+      dot(ctx, -50, -68 + sw, 7, skin); dot(ctx, 62, -139 - sw, 7, skin);
+    } else if (pose === 'jump') {
+      limb(ctx, 'M-16,-112 Q-44,-140 -34,-170', skin, 7); limb(ctx, 'M16,-112 Q46,-140 38,-170', skin, 7);
+      dot(ctx, -34, -172, 7, skin); dot(ctx, 38, -172, 7, skin);
+    } else {
+      limb(ctx, 'M-16,-112 Q-42,-96 -30,-84 Q-20,-78 -4,-82', skin, 7);
+      limb(ctx, 'M16,-112 Q42,-96 30,-84 Q20,-78 6,-82', skin, 7);
+      dot(ctx, -3, -82, 7, skin); dot(ctx, 7, -82, 7, skin);
+    }
+    // 목 + 머리 + 머리카락
+    shape(ctx, 'M-5,-124 v-14 h10 v14Z', skin, 3.5);
+    shape(ctx, 'M-46,-190 q-14,-4 -12,10 q2,10 14,8Z', skin, 4);
+    shape(ctx, 'M-40,-150 C-52,-200 -42,-246 2,-248 C44,-248 54,-204 44,-152 C40,-128 -34,-126 -40,-150Z', skin, 4);
+    line(ctx, 'M-6,-247 q-10,-22 -22,-20 M2,-248 q2,-26 -6,-34 M10,-247 q14,-18 24,-12');
+    drawFace(ctx, tier, skin, time);
+    ctx.restore();
+    ctx.restore();
+  }
+
+  const api = { draw, gaugeLook, tint, POSES };
+  root.RushHero = api;
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+})(typeof globalThis !== 'undefined' ? globalThis : window);
+
+;
 (function (root) {
   'use strict';
 
@@ -2217,6 +2404,7 @@ window.__RUSH_BUNDLED_QA__ = true;
     navy: '#3c5365', yellow: '#edc777', skin: '#ffd3ae', hair: '#344249',
     road: '#c6d0c8', blue: '#74bfd0', white: '#fffdf6'
   };
+  const INK1 = '#2b2233';
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const mix = (a, b, t) => a + (b - a) * t;
   const hash = n => {
@@ -2291,17 +2479,18 @@ window.__RUSH_BUNDLED_QA__ = true;
 
     sky(camera, stage) {
       const ctx = this.ctx;
-      const colors = stage === 3 ? ['#e8e2ce', '#f9ecd5'] : stage === 2 ? ['#cee4d9', '#f5f0d9'] : ['#d4e9de', '#f5f0de'];
+      const one = stage === 1;
+      const colors = one ? ['#79d3e6', '#ffeab0'] : stage === 3 ? ['#e8e2ce', '#f9ecd5'] : stage === 2 ? ['#cee4d9', '#f5f0d9'] : ['#d4e9de', '#f5f0de'];
       const gradient = ctx.createLinearGradient(0, 0, 0, 600);
       gradient.addColorStop(0, colors[0]); gradient.addColorStop(1, colors[1]);
       ctx.fillStyle = gradient; ctx.fillRect(0, 0, 1280, 720);
-      ellipse(ctx, 1090 - camera * .012 % 200, 147, 46, 46, '#fff7d3');
-      ellipse(ctx, 1090 - camera * .012 % 200, 147, 58, 58, '#fff7d333');
+      ellipse(ctx, 1090 - camera * .012 % 200, 147, 46, 46, one ? '#ffb347' : '#fff7d3', one ? INK1 : null, 3);
+      ellipse(ctx, 1090 - camera * .012 % 200, 147, 62, 62, one ? '#ffd27a55' : '#fff7d333');
       for (let i = -1; i < 6; i++) {
         const x = i * 325 - (camera * .05 % 325), y = 100 + hash(i + 20) * 160;
         this.cloud(x, y, .7 + hash(i + 8) * .5);
       }
-      ctx.fillStyle = '#b5cebd'; ctx.beginPath(); ctx.moveTo(0, 470);
+      ctx.fillStyle = one ? '#59b9c4' : '#b5cebd'; ctx.beginPath(); ctx.moveTo(0, 470);
       for (let x = 0; x <= 1300; x += 25) ctx.lineTo(x, 418 + Math.sin((x + camera * .1) / 155) * 19 + Math.sin(x / 87) * 7);
       ctx.lineTo(1280, 580); ctx.lineTo(0, 580); ctx.fill();
       this.distantBuildings(camera, stage);
@@ -2319,10 +2508,11 @@ window.__RUSH_BUNDLED_QA__ = true;
       const ctx = this.ctx, offset = camera * .24, start = Math.floor(offset / 160) - 1;
       for (let i = start; i < start + 12; i++) {
         const x = i * 160 - offset, h = 85 + hash(i + 38) * 145, y = 504 - h;
-        box(ctx, x, y, 140, h, ['#a5c2b1', '#b7cbb7', '#c6d0b9'][Math.abs(i) % 3], 3, null);
-        box(ctx, x + 9, y - 9, 122, 10, '#b0c1ac', 1, null);
+        const far = stage === 1;
+        box(ctx, x, y, 140, h, far ? ['#8a7cc4', '#9a85cf', '#7b72b8'][Math.abs(i) % 3] : ['#a5c2b1', '#b7cbb7', '#c6d0b9'][Math.abs(i) % 3], 3, far ? INK1 : null, far ? 2.5 : 0);
+        box(ctx, x + 9, y - 9, 122, 10, far ? '#6f64a8' : '#b0c1ac', 1, null);
         for (let row = 0; row < h / 36 - 1; row++) for (let col = 0; col < 4; col++) {
-          box(ctx, x + 15 + col * 30, y + 18 + row * 35, 14, 19, '#e4e6cf88', 2, null);
+          box(ctx, x + 15 + col * 30, y + 18 + row * 35, 14, 19, far ? ((row + col + i) % 3 ? '#ffe58a' : '#5f5698') : '#e4e6cf88', 2, null);
         }
         if (stage === 2 && i % 3 === 0) {
           path(ctx, [[x + 70, y], [x + 70, y - 55], [x + 115, y - 55]], '#9ab39e', 4);
@@ -2331,7 +2521,45 @@ window.__RUSH_BUNDLED_QA__ = true;
       }
     }
 
+    building1(x, y, variant) {
+      const ctx = this.ctx, seed = hash(variant * 3), w = 255 + seed * 60, h = 185 + hash(variant + 5) * 96;
+      const pal = [['#5CC4DD', '#3a9db8'], ['#F0735A', '#c9503e'], ['#EBCB74', '#c9a24a'], ['#9B86C9', '#7a66ab']][Math.abs(variant) % 4];
+      ctx.save(); ctx.translate(x, y);
+      ctx.rotate((hash(variant + 11) - .5) * .045);
+      ctx.transform(1, 0, (hash(variant + 2) - .5) * .13, 1, 0, 0);
+      ellipse(ctx, w / 2, 2, w * .62, 9, '#2b223330');
+      box(ctx, 0, -h, w, h, pal[0], 4, INK1, 3.5);
+      box(ctx, -10, -h - 14, w + 20, 18, pal[1], 3, INK1, 3.5);
+      if (variant % 3 === 0) { // 옥상 물탱크
+        box(ctx, w * .62, -h - 58, 46, 40, '#c8c0d8', 6, INK1, 3.5);
+        path(ctx, [[w * .62 + 8, -h - 18], [w * .62 + 6, -h - 12], [w * .62 + 40, -h - 12], [w * .62 + 38, -h - 18]], INK1, 3);
+      }
+      for (let i = 0; i < 3; i++) {
+        const wx = 24 + i * (w - 58) / 3, lit = (variant + i) % 3 !== 1;
+        box(ctx, wx - 4, -h + 26, 54, 60, pal[1], 5, INK1, 3.5);
+        box(ctx, wx + 3, -h + 33, 40, 46, lit ? '#FFE58A' : '#6a5f9c', 3, INK1, 2.5);
+        path(ctx, [[wx + 23, -h + 33], [wx + 23, -h + 79]], INK1, 2.5);
+        path(ctx, [[wx + 3, -h + 56], [wx + 43, -h + 56]], INK1, 2.5);
+        if (lit) path(ctx, [[wx + 8, -h + 44], [wx + 17, -h + 37]], '#ffffffaa', 4);
+      }
+      const shop = ['동네 빵집', '초록 상점', 'COFFEE', '좋은 하루'][Math.abs(variant) % 4];
+      box(ctx, 12, -128, w - 24, 38, '#fff2c9', 5, INK1, 3.5);
+      text(ctx, shop, w / 2, -109, 17, INK1);
+      box(ctx, 22, -86, w - 44, 83, '#9be0e8', 4, INK1, 3.5);
+      const doorX = w * .61;
+      box(ctx, doorX, -86, 48, 83, '#3a9db8', 3, INK1, 3.5);
+      ellipse(ctx, doorX + 38, -42, 3, 3, '#FFE58A', INK1, 1.5);
+      path(ctx, [[34, -60], [62, -80]], '#ffffffaa', 6);
+      for (let a = 0; a < 9; a++) {
+        const aw = (w - 12) / 9;
+        box(ctx, 6 + a * aw, -92, aw, 16, a % 2 ? '#ffffff' : '#E8453C', 3, INK1, 2.5);
+      }
+      this.flowerpot(14, 0, .7);
+      ctx.restore();
+    }
+
     building(x, y, variant, stage) {
+      if (stage === 1) return this.building1(x, y, variant);
       const ctx = this.ctx, seed = hash(variant * 3), w = 255 + seed * 60, h = 175 + hash(variant + 5) * 88;
       const wall = stage === 3 ? ['#ecd6bc', '#e8c8b5', '#d6d9ba'][Math.abs(variant) % 3] : ['#ead9bd', '#d7deca', '#e8cbb6', '#d0d8c8'][Math.abs(variant) % 4];
       ctx.save(); ctx.translate(x, y); ctx.globalAlpha = .96;
@@ -2384,16 +2612,16 @@ window.__RUSH_BUNDLED_QA__ = true;
       ctx.restore();
     }
 
-    tree(x, y, scale = 1, variant = 0) {
-      const ctx = this.ctx; ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
+    tree(x, y, scale = 1, variant = 0, stage = 2) {
+      const ctx = this.ctx, one = stage === 1; ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
       ellipse(ctx, 4, 1, 44, 7, '#5c745b18');
-      box(ctx, -7, -118, 14, 118, '#a69170', 3, '#718268', 2);
+      box(ctx, -7, -118, 14, 118, one ? '#8a5a3c' : '#a69170', 3, one ? INK1 : '#718268', one ? 3 : 2);
       path(ctx, [[0, -61], [-18, -93]], '#9a8568', 6);
       path(ctx, [[2, -83], [21, -111]], '#9a8568', 5);
-      const leaves = variant % 2 ? '#91b08c' : '#abc198';
-      ellipse(ctx, -26, -119, 34, 42, leaves, '#7d9c7c', 1.5);
-      ellipse(ctx, 24, -122, 39, 43, leaves, '#7d9c7c', 1.5);
-      ellipse(ctx, -2, -151, 39, 43, leaves, '#7d9c7c', 1.5);
+      const leaves = one ? (variant % 2 ? '#3BA394' : '#57C7B6') : variant % 2 ? '#91b08c' : '#abc198';
+      ellipse(ctx, -26, -119, 34, 42, leaves, one ? INK1 : '#7d9c7c', one ? 3 : 1.5);
+      ellipse(ctx, 24, -122, 39, 43, leaves, one ? INK1 : '#7d9c7c', one ? 3 : 1.5);
+      ellipse(ctx, -2, -151, 39, 43, leaves, one ? INK1 : '#7d9c7c', one ? 3 : 1.5);
       ellipse(ctx, -17, -164, 17, 12, '#c5d8ad66');
       path(ctx, [[-34, -117], [-25, -120]], '#d5e2bd', 3);
       path(ctx, [[22, -146], [31, -139]], '#d5e2bd', 3);
@@ -2410,16 +2638,35 @@ window.__RUSH_BUNDLED_QA__ = true;
       ellipse(ctx, 3, -61, 3, 3, '#f3d491'); ctx.restore();
     }
 
-    lamp(x, ground) {
+    lamp(x, ground, stage = 2) {
       const ctx = this.ctx;
+      if (stage === 1) {
+        path(ctx, [[x, ground], [x, ground - 194], [x + 8, ground - 205], [x + 31, ground - 205]], INK1, 9);
+        path(ctx, [[x, ground], [x, ground - 194], [x + 8, ground - 205], [x + 31, ground - 205]], '#6b5f93', 4);
+        path(ctx, [[x + 18, ground - 205], [x + 44, ground - 205], [x + 40, ground - 184], [x + 23, ground - 184]], INK1, 3, '#FFE58A');
+        ellipse(ctx, x + 32, ground - 195, 34, 36, '#ffe58a30');
+        return;
+      }
       path(ctx, [[x, ground], [x, ground - 194], [x + 8, ground - 205], [x + 31, ground - 205]], '#7c8b79', 5);
       box(ctx, x - 9, ground - 12, 18, 12, '#8e9a86', 3, '#7c8b79', 1.5);
       path(ctx, [[x + 18, ground - 205], [x + 44, ground - 205], [x + 40, ground - 184], [x + 23, ground - 184]], '#7c8b79', 2, '#f3dfaa');
       ellipse(ctx, x + 32, ground - 195, 24, 27, '#ffe7aa12');
     }
 
-    ground(camera) {
+    ground(camera, stage = 2) {
       const ctx = this.ctx;
+      if (stage === 1) {
+        ctx.fillStyle = '#d9a95a'; ctx.fillRect(0, 550, 1280, 26);
+        ctx.fillStyle = '#ffd98a'; ctx.fillRect(0, 576, 1280, 42);
+        path(ctx, [[0, 576], [1280, 576]], INK1, 4);
+        path(ctx, [[0, 614], [1280, 614]], INK1, 3);
+        ctx.fillStyle = '#5b5470'; ctx.fillRect(0, 616, 1280, 104);
+        const off1 = camera % 62;
+        for (let x = -62; x < 1342; x += 62) path(ctx, [[x - off1, 578], [x - off1 + 7, 612]], '#c99a4e', 2);
+        const road1 = camera % 230;
+        for (let x = -230; x < 1510; x += 230) box(ctx, x - road1, 672, 110, 8, '#ffe58a', 3, INK1, 2);
+        return;
+      }
       ctx.fillStyle = '#dce0c7'; ctx.fillRect(0, 550, 1280, 26);
       ctx.fillStyle = '#f1e6cb'; ctx.fillRect(0, 576, 1280, 42);
       path(ctx, [[0, 576], [1280, 576]], '#7f8b77', 3);
@@ -2447,11 +2694,11 @@ window.__RUSH_BUNDLED_QA__ = true;
       for (let i = first; i < first + 6; i++) {
         const x = i * 430 - near;
         this.building(x + 13, 549, i, stage);
-        this.tree(x + 355, 559, .75 + hash(i + 7) * .2, i);
+        this.tree(x + 355, 559, .75 + hash(i + 7) * .2, i, stage);
       }
       const lampStart = Math.floor(cam / 710) - 1;
-      for (let i = lampStart; i < lampStart + 4; i++) this.lamp(i * 710 + 430 - cam, 570);
-      this.ground(cam);
+      for (let i = lampStart; i < lampStart + 4; i++) this.lamp(i * 710 + 430 - cam, 570, stage);
+      this.ground(cam, stage);
       const level = engine.level || {};
       for (const toilet of level.toilets || []) {
         const x = toilet.x - cam;
@@ -2610,6 +2857,7 @@ window.__RUSH_BUNDLED_QA__ = true;
     }
 
     drawCharacter(ctx, x, y, scale = 1, gauge = 25, pose = 'idle', time = 0, options = {}) {
+      if (!options.npc && root.RushHero && root.RushHero.POSES.has(pose)) return root.RushHero.draw(ctx, x, y, scale, gauge, pose, time, options);
       ctx.save(); ctx.translate(x, y); ctx.scale(scale * (options.facing || 1), scale);
       const inheritedAlpha = ctx.globalAlpha;
       const running = ['run', 'sprint', 'walk'].includes(pose);

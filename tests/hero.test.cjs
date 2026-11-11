@@ -11,9 +11,9 @@ test('gaugeLook: 감정 구간 경계가 스펙(0/40/70/90)과 같다', () => {
   assert.equal(gaugeLook(90).tier, 3);
 });
 
-test('gaugeLook: 게이지가 오를수록 몸이 굽는 각도가 줄지 않는다(폭발 직전 제외)', () => {
-  assert.ok(gaugeLook(55).lean > gaugeLook(10).lean);
-  assert.ok(gaugeLook(80).lean > gaugeLook(55).lean);
+test('gaugeLook: 0~89%에서 lean이 끊김 없이 단조 증가한다', () => {
+  for (let g = 0; g < 89; g++) assert.ok(gaugeLook(g + 1).lean >= gaugeLook(g).lean, `gauge ${g}`);
+  for (const b of [40, 70, 90]) assert.ok(Math.abs(gaugeLook(b).lean - gaugeLook(b - 0.01).lean) < 0.5, `경계 ${b}`);
 });
 
 test('tint: 70~89%에서 피부가 점점 붉어진다(초록 채널 감소)', () => {

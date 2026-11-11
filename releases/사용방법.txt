@@ -1,4 +1,4 @@
-﻿TOILET RUSH — 집까지 참아라! v1.1.0
+﻿TOILET RUSH — 집까지 참아라! v1.2.0
 
 1. ToiletRush.exe를 더블클릭하세요.
 2. PC의 기본 브라우저에서 게임이 열립니다. 게임 시작을 누르세요.
