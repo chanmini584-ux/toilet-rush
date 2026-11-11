@@ -4,7 +4,7 @@
 
   const INK = '#2b2233';
   const SHIRT = '#F28C28', SHORTS = '#6B4A2E', SHOE = '#D9342B', TEAR = '#9BD9F0';
-  const K = 0.4; // 시트 좌표(키 약 250) -> 게임 크기(키 약 100)
+  const K = 0.5; // 시트 좌표(키 약 250) -> 게임 크기(키 약 125)
 
   const mix = (a, b, t) => a + (b - a) * t;
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
