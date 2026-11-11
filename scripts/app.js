@@ -132,9 +132,9 @@
   }
   function renderResult(victory) {
     $('result-screen').classList.toggle('failure', !victory);
-    $('result-eyebrow').textContent = victory ? 'THERE IS NO PLACE LIKE HOME' : 'SO CLOSE. YET SO FAR.';
+    $('result-eyebrow').textContent = victory ? '집이 최고다' : '아... 진짜 코앞이었는데';
     $('result-title').textContent = victory ? 'CLEAR!' : 'GAME OVER';
-    $('result-message').textContent = victory ? '드디어 도착했다!' : '결국 참지 못했습니다...';
+    $('result-message').textContent = victory ? '도착! 살았다...' : '한 번만 더! 이번엔 진짜 깬다';
     const result = engine.result || { time: engine.elapsed, gauge: engine.gauge, ...engine.stats };
     const entries = [
       [victory ? '클리어 시간' : '버틴 시간', formatTime(result.time, true)],

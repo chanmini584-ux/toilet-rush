@@ -6,7 +6,7 @@
 
 ## 실행
 
-**Windows PC 실행 파일:** [ToiletRush.exe](releases/ToiletRush.exe)를 내려받아 더블클릭하세요. 게임 데이터가 EXE에 포함되어 있어 EXE 하나만 있어도 됩니다. PC의 기본 브라우저에서 게임이 열리며, 인터넷·Node.js 설치·관리자 권한이 필요하지 않습니다. [ZIP 묶음](releases/ToiletRush-v1.2.1-win.zip)과 [단일 HTML 파일](releases/ToiletRush.html)도 제공합니다.
+**Windows PC 실행 파일:** [ToiletRush.exe](releases/ToiletRush.exe)를 내려받아 더블클릭하세요. 게임 데이터가 EXE에 포함되어 있어 EXE 하나만 있어도 됩니다. PC의 기본 브라우저에서 게임이 열리며, 인터넷·Node.js 설치·관리자 권한이 필요하지 않습니다. [ZIP 묶음](releases/ToiletRush-v1.2.2-win.zip)과 [단일 HTML 파일](releases/ToiletRush.html)도 제공합니다.
 
 EXE는 Windows .NET Framework 4.x와 최신 PC 브라우저를 사용합니다. EXE를 실행하면 게임 HTML이 `%LOCALAPPDATA%\ToiletRush\` 폴더에 풀리고 기본 브라우저에서 열립니다. 로컬 서버 없이 동작하므로 방화벽·포트 차단 걱정이 없습니다. EXE가 막힌다면 ZIP 안의 `ToiletRush.html`을 더블클릭해 바로 플레이할 수 있습니다. 자세한 내용은 [PC 배포·검증 기록](docs/PC_RELEASE.md)을 참고하세요.
 
@@ -73,6 +73,14 @@ npm run check
 | `tests/browser.js` | 명시적 QA URL의 실제 브라우저 통합 검증 |
 
 ## 작업 기록
+
+### 2026-11-12 · v1.2.2 (픽셀아트 밤 거리 오버홀)
+
+- 1구간 배경을 레퍼런스(밤 거리 픽셀아트)에 맞춰 교체: 보라→주황 밤하늘·별·달, 벽돌/크림/청록 건물(회전·기울임 제거, `fillRect` 기반), 불 켜진 창, 줄무늬 어닝, 전신주·전선, 회색 인도·어두운 도로.
+- 메뉴 화면을 같은 밤 톤으로 통일(페이드·후광 색 변경), 페이지 배경/버튼/제목을 픽셀 스타일(Press Start 2P, 각진 모서리, 계단 그림자)로 변경.
+- 결과 화면 문구를 짧고 직설적인 반응으로 변경.
+- 검증(실행함): 단위 테스트 21개 통과, 구문 검사 통과, 헤드리스 Chrome으로 메뉴·플레이 화면 렌더 확인(페이지 오류 0). EXE 실제 Windows 실행은 미검증(mono 빌드만).
+- 한계: 결과/설명 모달 등 일부 CSS는 아직 이전 스타일이 섞여 있을 수 있음. 한글은 픽셀 폰트 미지원이라 Jua 사용.
 
 ### 2026-11-11 · v1.2.1 (EXE 서버리스 전환)
 

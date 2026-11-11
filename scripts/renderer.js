@@ -82,18 +82,38 @@
 
     sky(camera, stage) {
       const ctx = this.ctx;
-      const one = stage === 1;
-      const colors = one ? ['#79d3e6', '#ffeab0'] : stage === 3 ? ['#e8e2ce', '#f9ecd5'] : stage === 2 ? ['#cee4d9', '#f5f0d9'] : ['#d4e9de', '#f5f0de'];
+      if (stage === 1) {
+        // 픽셀아트 밤 하늘: 보라 → 주황 지평선
+        const grad = ctx.createLinearGradient(0, 0, 0, 570);
+        grad.addColorStop(0, '#17132a'); grad.addColorStop(.28, '#2a1840'); grad.addColorStop(.52, '#581e44');
+        grad.addColorStop(.72, '#c04830'); grad.addColorStop(1, '#e87830');
+        ctx.fillStyle = grad; ctx.fillRect(0, 0, 1280, 720);
+        for (let i = 0; i < 85; i++) {
+          const sx = ((hash(i * 7 + 3) * 2560 - camera * .015) % 1280 + 1280) % 1280, sy = hash(i * 13 + 1) * 280;
+          ctx.fillStyle = hash(i * 3) > .75 ? '#ffffff' : '#ffd8a0';
+          const sz = hash(i * 11) > .82 ? 2 : 1;
+          ctx.fillRect(Math.round(sx), Math.round(sy), sz, sz);
+        }
+        const mx = Math.round(1060 - (camera * .006 % 300)), my = 90;
+        const disc = (r, color, dx) => {
+          ctx.fillStyle = color;
+          for (let dy = -r; dy <= r; dy++) { const w = Math.round(Math.sqrt(r * r - dy * dy)); ctx.fillRect(mx + dx - w, my + dy, w * 2, 1); }
+        };
+        disc(28, '#ffe8c030', 0); disc(18, '#ffe8c0', 0); disc(15, '#3028508c', 6);
+        this.distantBuildings(camera, 1);
+        return;
+      }
+      const colors = stage === 3 ? ['#e8e2ce', '#f9ecd5'] : stage === 2 ? ['#cee4d9', '#f5f0d9'] : ['#d4e9de', '#f5f0de'];
       const gradient = ctx.createLinearGradient(0, 0, 0, 600);
       gradient.addColorStop(0, colors[0]); gradient.addColorStop(1, colors[1]);
       ctx.fillStyle = gradient; ctx.fillRect(0, 0, 1280, 720);
-      ellipse(ctx, 1090 - camera * .012 % 200, 147, 46, 46, one ? '#ffb347' : '#fff7d3', one ? INK1 : null, 3);
-      ellipse(ctx, 1090 - camera * .012 % 200, 147, 62, 62, one ? '#ffd27a55' : '#fff7d333');
+      ellipse(ctx, 1090 - camera * .012 % 200, 147, 46, 46, '#fff7d3', null, 3);
+      ellipse(ctx, 1090 - camera * .012 % 200, 147, 62, 62, '#fff7d333');
       for (let i = -1; i < 6; i++) {
         const x = i * 325 - (camera * .05 % 325), y = 100 + hash(i + 20) * 160;
         this.cloud(x, y, .7 + hash(i + 8) * .5);
       }
-      ctx.fillStyle = one ? '#59b9c4' : '#b5cebd'; ctx.beginPath(); ctx.moveTo(0, 470);
+      ctx.fillStyle = '#b5cebd'; ctx.beginPath(); ctx.moveTo(0, 470);
       for (let x = 0; x <= 1300; x += 25) ctx.lineTo(x, 418 + Math.sin((x + camera * .1) / 155) * 19 + Math.sin(x / 87) * 7);
       ctx.lineTo(1280, 580); ctx.lineTo(0, 580); ctx.fill();
       this.distantBuildings(camera, stage);
@@ -108,7 +128,20 @@
     }
 
     distantBuildings(camera, stage) {
-      const ctx = this.ctx, offset = camera * .24, start = Math.floor(offset / 160) - 1;
+      const ctx = this.ctx;
+      if (stage === 1) {
+        const off = camera * .18, st = Math.floor(off / 120) - 1;
+        for (let i = st; i < st + 15; i++) {
+          const bx = Math.round(i * 120 - off), bh = Math.round(60 + hash(i + 38) * 110), by = 490 - bh;
+          ctx.fillStyle = '#1e1430'; ctx.fillRect(bx, by, 108, bh);
+          for (let wy = by + 8; wy < 480; wy += 20) for (let col = 0; col < 4; col++) {
+            if ((Math.abs(i) + col + Math.round(wy / 20)) % 3 !== 0) { ctx.fillStyle = '#ffd08040'; ctx.fillRect(bx + 10 + col * 25, wy, 12, 10); }
+          }
+        }
+        ctx.fillStyle = '#1e1430'; ctx.fillRect(0, 488, 1280, 100);
+        return;
+      }
+      const offset = camera * .24, start = Math.floor(offset / 160) - 1;
       for (let i = start; i < start + 12; i++) {
         const x = i * 160 - offset, h = 85 + hash(i + 38) * 145, y = 504 - h;
         const far = stage === 1;
@@ -125,39 +158,59 @@
     }
 
     building1(x, y, variant) {
-      const ctx = this.ctx, seed = hash(variant * 3), w = 255 + seed * 60, h = 185 + hash(variant + 5) * 96;
-      const pal = [['#5CC4DD', '#3a9db8'], ['#F0735A', '#c9503e'], ['#EBCB74', '#c9a24a'], ['#9B86C9', '#7a66ab']][Math.abs(variant) % 4];
-      ctx.save(); ctx.translate(x, y);
-      ctx.rotate((hash(variant + 11) - .5) * .045);
-      ctx.transform(1, 0, (hash(variant + 2) - .5) * .13, 1, 0, 0);
-      ellipse(ctx, w / 2, 2, w * .62, 9, '#2b223330');
-      box(ctx, 0, -h, w, h, pal[0], 4, INK1, 3.5);
-      box(ctx, -10, -h - 14, w + 20, 18, pal[1], 3, INK1, 3.5);
+      const ctx = this.ctx, p = v => Math.round(v);
+      const W = p(248 + hash(variant * 3) * 55), H = p(188 + hash(variant + 5) * 94);
+      const type = ((variant % 3) + 3) % 3;
+      const T = [
+        {wall: '#c45238', dark: '#8c3828', hi: '#d46040', awA: '#d04030', awB: '#f0e8d8', sign: '#b83020', bg: '#f5e8d0', label: '편의점'},
+        {wall: '#dcd4a0', dark: '#b4a870', hi: '#ecdca8', awA: '#2a8060', awB: '#f0e8d8', sign: '#2a6050', bg: '#e8f0e0', label: '카페'},
+        {wall: '#3a7888', dark: '#2a5868', hi: '#4a9098', awA: '#604898', awB: '#f0e8d8', sign: '#483878', bg: '#d8d0f0', label: '식당'}
+      ][type];
+      const INK = '#1a1830';
+      ctx.save(); ctx.translate(p(x), p(y));
+      ctx.fillStyle = '#00000030'; ctx.fillRect(6, -H + 6, W, H);
+      ctx.fillStyle = T.wall; ctx.fillRect(0, -H, W, H);
+      ctx.fillStyle = T.dark; ctx.fillRect(W - 10, -H, 10, H);
+      ctx.fillStyle = T.hi; ctx.fillRect(0, -H, W, 4);
+      ctx.fillStyle = INK; ctx.fillRect(-8, -H - 16, W + 16, 4);
+      ctx.fillStyle = T.dark; ctx.fillRect(-8, -H - 12, W + 16, 14);
       if (variant % 3 === 0) { // 옥상 물탱크
-        box(ctx, w * .62, -h - 58, 46, 40, '#c8c0d8', 6, INK1, 3.5);
-        path(ctx, [[w * .62 + 8, -h - 18], [w * .62 + 6, -h - 12], [w * .62 + 40, -h - 12], [w * .62 + 38, -h - 18]], INK1, 3);
+        ctx.fillStyle = INK; ctx.fillRect(W - 68, -H - 54, 52, 4); ctx.fillRect(W - 68, -H - 18, 52, 3);
+        ctx.fillStyle = '#909098'; ctx.fillRect(W - 66, -H - 50, 48, 32);
+        ctx.fillStyle = '#a0a0b0'; ctx.fillRect(W - 64, -H - 48, 4, 28);
+        ctx.fillStyle = '#686878'; ctx.fillRect(W - 62, -H - 15, 6, 15); ctx.fillRect(W - 24, -H - 15, 6, 15);
       }
-      for (let i = 0; i < 3; i++) {
-        const wx = 24 + i * (w - 58) / 3, lit = (variant + i) % 3 !== 1;
-        box(ctx, wx - 4, -h + 26, 54, 60, pal[1], 5, INK1, 3.5);
-        box(ctx, wx + 3, -h + 33, 40, 46, lit ? '#FFE58A' : '#6a5f9c', 3, INK1, 2.5);
-        path(ctx, [[wx + 23, -h + 33], [wx + 23, -h + 79]], INK1, 2.5);
-        path(ctx, [[wx + 3, -h + 56], [wx + 43, -h + 56]], INK1, 2.5);
-        if (lit) path(ctx, [[wx + 8, -h + 44], [wx + 17, -h + 37]], '#ffffffaa', 4);
+      const winW = 32, winH = 40, step = p((W - 28) / 3);
+      for (let row = 0; row < 2; row++) for (let col = 0; col < 3; col++) {
+        const wx = 14 + col * step, wy = -H + 18 + row * 60, lit = (Math.abs(variant) * 7 + row * 3 + col * 2) % 5 !== 0;
+        ctx.fillStyle = INK; ctx.fillRect(wx - 2, wy - 2, winW + 4, winH + 4);
+        ctx.fillStyle = lit ? '#ffd080' : '#1c1838'; ctx.fillRect(wx, wy, winW, winH);
+        if (lit) {
+          ctx.fillStyle = '#ffe890'; ctx.fillRect(wx, wy, 15, winH);
+          ctx.fillStyle = '#c08020'; ctx.fillRect(wx, wy + 19, winW, 2); ctx.fillRect(wx + 15, wy, 2, winH);
+          ctx.fillStyle = '#ffffff'; ctx.fillRect(wx + 2, wy + 2, 4, 6);
+        }
       }
-      const shop = ['동네 빵집', '초록 상점', 'COFFEE', '좋은 하루'][Math.abs(variant) % 4];
-      box(ctx, 12, -128, w - 24, 38, '#fff2c9', 5, INK1, 3.5);
-      text(ctx, shop, w / 2, -109, 17, INK1);
-      box(ctx, 22, -86, w - 44, 83, '#9be0e8', 4, INK1, 3.5);
-      const doorX = w * .61;
-      box(ctx, doorX, -86, 48, 83, '#3a9db8', 3, INK1, 3.5);
-      ellipse(ctx, doorX + 38, -42, 3, 3, '#FFE58A', INK1, 1.5);
-      path(ctx, [[34, -60], [62, -80]], '#ffffffaa', 6);
-      for (let a = 0; a < 9; a++) {
-        const aw = (w - 12) / 9;
-        box(ctx, 6 + a * aw, -92, aw, 16, a % 2 ? '#ffffff' : '#E8453C', 3, INK1, 2.5);
-      }
-      this.flowerpot(14, 0, .7);
+      const shopY = -H + 18 + 120 + winH + 10, signH = 28;
+      ctx.fillStyle = T.sign; ctx.fillRect(10, shopY, W - 20, signH);
+      ctx.fillStyle = T.bg; ctx.fillRect(12, shopY + 2, W - 24, signH - 4);
+      text(ctx, T.label, W / 2, shopY + 15, 14, T.sign);
+      const awY = shopY + signH, awH = 16, n = 10, sw = p((W - 10) / n);
+      ctx.fillStyle = INK; ctx.fillRect(0, awY - 2, W, 2);
+      for (let s = 0; s < n; s++) { ctx.fillStyle = s % 2 ? T.awB : T.awA; ctx.fillRect(5 + s * sw, awY, sw, awH); }
+      ctx.fillStyle = INK; ctx.fillRect(0, awY + awH, W, 2);
+      const dy = awY + awH + 2, dh = Math.max(30, -4 - dy);
+      ctx.fillStyle = '#1c2838'; ctx.fillRect(8, dy, W - 60, dh);
+      const items = [['#e84030', '#60a830', '#3878c8', '#e8b828'], ['#c06838', '#588898', '#a04898', '#78a850']][type % 2], iw = p((W - 72) / 4) - 3;
+      for (let i = 0; i < 4; i++) { ctx.fillStyle = items[i]; ctx.fillRect(12 + i * (iw + 3), dy + 8, iw, 14); }
+      const dx = W - 52;
+      ctx.fillStyle = INK; ctx.fillRect(dx - 2, dy, 48, dh);
+      ctx.fillStyle = '#2a4060'; ctx.fillRect(dx, dy, 44, dh);
+      ctx.fillStyle = '#ffd080'; ctx.fillRect(dx + 7, dy + p(dh / 2), 5, 4);
+      ctx.fillStyle = INK; ctx.fillRect(-4, -2, W + 8, 3);
+      ctx.fillStyle = '#c87848'; ctx.fillRect(-10, -10, 20, 10);
+      ctx.fillStyle = '#286040'; ctx.fillRect(-12, -22, 24, 12);
+      ctx.fillStyle = '#40b060'; ctx.fillRect(-10, -28, 8, 7); ctx.fillRect(-2, -32, 8, 7); ctx.fillRect(6, -26, 8, 7);
       ctx.restore();
     }
 
@@ -216,15 +269,24 @@
     }
 
     tree(x, y, scale = 1, variant = 0, stage = 2) {
-      const ctx = this.ctx, one = stage === 1; ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
+      const ctx = this.ctx; ctx.save(); ctx.translate(Math.round(x), Math.round(y)); ctx.scale(scale, scale);
+      if (stage === 1) {
+        ctx.fillStyle = '#3c2818'; ctx.fillRect(-5, -90, 10, 90);
+        ctx.fillStyle = '#5c3c24'; ctx.fillRect(-4, -85, 4, 80);
+        const disc = (cx, cy, r, c) => { ctx.fillStyle = c; for (let d = -r; d <= r; d++) { const w = Math.round(Math.sqrt(r * r - d * d)); ctx.fillRect(cx - w, cy + d, w * 2, 1); } };
+        const dark = variant % 2 ? '#1c5030' : '#1e5834', main = variant % 2 ? '#287040' : '#2a7848';
+        for (const [cx, cy, r] of [[-18, -110, 26], [16, -112, 28], [-2, -132, 28]]) { disc(cx, cy, r, dark); disc(cx, cy, r - 3, main); }
+        disc(-24, -118, 8, '#38a060'); disc(10, -120, 7, '#38a060'); disc(-8, -142, 7, '#38a060');
+        ctx.restore(); return;
+      }
       ellipse(ctx, 4, 1, 44, 7, '#5c745b18');
-      box(ctx, -7, -118, 14, 118, one ? '#8a5a3c' : '#a69170', 3, one ? INK1 : '#718268', one ? 3 : 2);
+      box(ctx, -7, -118, 14, 118, '#a69170', 3, '#718268', 2);
       path(ctx, [[0, -61], [-18, -93]], '#9a8568', 6);
       path(ctx, [[2, -83], [21, -111]], '#9a8568', 5);
-      const leaves = one ? (variant % 2 ? '#3BA394' : '#57C7B6') : variant % 2 ? '#91b08c' : '#abc198';
-      ellipse(ctx, -26, -119, 34, 42, leaves, one ? INK1 : '#7d9c7c', one ? 3 : 1.5);
-      ellipse(ctx, 24, -122, 39, 43, leaves, one ? INK1 : '#7d9c7c', one ? 3 : 1.5);
-      ellipse(ctx, -2, -151, 39, 43, leaves, one ? INK1 : '#7d9c7c', one ? 3 : 1.5);
+      const leaves = variant % 2 ? '#91b08c' : '#abc198';
+      ellipse(ctx, -26, -119, 34, 42, leaves, '#7d9c7c', 1.5);
+      ellipse(ctx, 24, -122, 39, 43, leaves, '#7d9c7c', 1.5);
+      ellipse(ctx, -2, -151, 39, 43, leaves, '#7d9c7c', 1.5);
       ellipse(ctx, -17, -164, 17, 12, '#c5d8ad66');
       path(ctx, [[-34, -117], [-25, -120]], '#d5e2bd', 3);
       path(ctx, [[22, -146], [31, -139]], '#d5e2bd', 3);
@@ -244,10 +306,14 @@
     lamp(x, ground, stage = 2) {
       const ctx = this.ctx;
       if (stage === 1) {
-        path(ctx, [[x, ground], [x, ground - 194], [x + 8, ground - 205], [x + 31, ground - 205]], INK1, 9);
-        path(ctx, [[x, ground], [x, ground - 194], [x + 8, ground - 205], [x + 31, ground - 205]], '#6b5f93', 4);
-        path(ctx, [[x + 18, ground - 205], [x + 44, ground - 205], [x + 40, ground - 184], [x + 23, ground - 184]], INK1, 3, '#FFE58A');
-        ellipse(ctx, x + 32, ground - 195, 34, 36, '#ffe58a30');
+        const px = Math.round(x), py = Math.round(ground);
+        ctx.fillStyle = '#484858'; ctx.fillRect(px - 3, py - 200, 6, 200);
+        ctx.fillStyle = '#686878'; ctx.fillRect(px - 3, py - 200, 2, 200);
+        ctx.fillStyle = '#484858'; ctx.fillRect(px - 32, py - 185, 64, 5);
+        ctx.fillStyle = '#a09888'; ctx.fillRect(px - 30, py - 192, 6, 10); ctx.fillRect(px + 24, py - 192, 6, 10);
+        ctx.fillStyle = '#585868'; ctx.fillRect(px - 12, py - 220, 24, 8); ctx.fillRect(px - 8, py - 214, 16, 14);
+        ctx.fillStyle = '#ffe880'; ctx.fillRect(px - 6, py - 212, 12, 10);
+        ctx.fillStyle = '#ffe88026'; ctx.fillRect(px - 24, py - 226, 48, 40);
         return;
       }
       path(ctx, [[x, ground], [x, ground - 194], [x + 8, ground - 205], [x + 31, ground - 205]], '#7c8b79', 5);
@@ -259,15 +325,17 @@
     ground(camera, stage = 2) {
       const ctx = this.ctx;
       if (stage === 1) {
-        ctx.fillStyle = '#d9a95a'; ctx.fillRect(0, 550, 1280, 26);
-        ctx.fillStyle = '#ffd98a'; ctx.fillRect(0, 576, 1280, 42);
-        path(ctx, [[0, 576], [1280, 576]], INK1, 4);
-        path(ctx, [[0, 614], [1280, 614]], INK1, 3);
-        ctx.fillStyle = '#5b5470'; ctx.fillRect(0, 616, 1280, 104);
-        const off1 = camera % 62;
-        for (let x = -62; x < 1342; x += 62) path(ctx, [[x - off1, 578], [x - off1 + 7, 612]], '#c99a4e', 2);
-        const road1 = camera % 230;
-        for (let x = -230; x < 1510; x += 230) box(ctx, x - road1, 672, 110, 8, '#ffe58a', 3, INK1, 2);
+        ctx.fillStyle = '#9898a8'; ctx.fillRect(0, 550, 1280, 28);
+        ctx.fillStyle = '#b0b0c0'; ctx.fillRect(0, 550, 1280, 3);
+        ctx.fillStyle = '#707088'; ctx.fillRect(0, 575, 1280, 3);
+        const tile = Math.round(camera) % 60; ctx.fillStyle = '#8484a0';
+        for (let tx = -60; tx < 1340; tx += 60) ctx.fillRect(tx - tile, 553, 2, 22);
+        ctx.fillStyle = '#585868'; ctx.fillRect(0, 578, 1280, 10);
+        ctx.fillStyle = '#38384c'; ctx.fillRect(0, 588, 1280, 132);
+        ctx.fillStyle = '#484858'; ctx.fillRect(0, 588, 1280, 3);
+        ctx.fillStyle = '#e8c840';
+        const line = Math.round(camera * .95) % 90;
+        for (let lx = -90; lx < 1370; lx += 90) ctx.fillRect(lx - line, 664, 54, 4);
         return;
       }
       ctx.fillStyle = '#dce0c7'; ctx.fillRect(0, 550, 1280, 26);
@@ -289,6 +357,15 @@
       }
     }
 
+    drawPowerlines(cam) {
+      const ctx = this.ctx, wy = 570 - 190, st = Math.floor(cam / 710) - 1;
+      ctx.strokeStyle = '#2a2838'; ctx.lineWidth = 2;
+      for (let i = st; i < st + 5; i++) {
+        const x1 = Math.round(i * 710 + 430 - cam), x2 = x1 + 710;
+        for (const o of [-27, 27]) { ctx.beginPath(); ctx.moveTo(x1 + o, wy); ctx.quadraticCurveTo((x1 + x2) / 2 + o, wy + 26, x2 + o, wy); ctx.stroke(); }
+      }
+    }
+
     drawWorld(engine) {
       const ctx = this.ctx, cam = engine.cameraX || 0, p = engine.player || {x: 200, y: 576};
       const stage = engine.stage || (p.x > 28000 ? 3 : p.x > 14000 ? 2 : 1);
@@ -301,6 +378,7 @@
       }
       const lampStart = Math.floor(cam / 710) - 1;
       for (let i = lampStart; i < lampStart + 4; i++) this.lamp(i * 710 + 430 - cam, 570, stage);
+      if (stage === 1) this.drawPowerlines(cam);
       this.ground(cam, stage);
       const level = engine.level || {};
       for (const toilet of level.toilets || []) {
@@ -643,13 +721,13 @@
       const ctx = this.ctx, cam = this.time * 6;
       this.sky(cam, 1);
       this.building(66 - cam % 20, 548, 0, 1); this.building(410 - cam % 20, 548, 1, 1);
-      this.home(1115, 568, .7); this.tree(737, 567, 1.25, 1);
-      this.ground(cam);
+      this.home(1115, 568, .7); this.tree(737, 567, 1.25, 1, 1);
+      this.ground(cam, 1);
       const fade = ctx.createLinearGradient(0, 0, 930, 0);
-      fade.addColorStop(0, '#faf3df'); fade.addColorStop(.5, '#faf3dfec'); fade.addColorStop(1, '#faf3df00');
+      fade.addColorStop(0, '#17132a'); fade.addColorStop(.5, '#17132ad0'); fade.addColorStop(1, '#17132a00');
       ctx.fillStyle = fade; ctx.fillRect(0, 0, 1020, 720);
       ctx.save(); ctx.translate(990, 454); ctx.rotate(-.12);
-      ellipse(ctx, 0, 0, 195, 174, '#f9eacb99');
+      ellipse(ctx, 0, 0, 195, 174, '#ffd08022');
       ctx.restore();
       this.drawCharacter(ctx, 969, 573, 3.05, 58, 'idle', this.time, {});
       this.bubble(963, 228, '오늘은… 집이 조금 멀다.', 17);
