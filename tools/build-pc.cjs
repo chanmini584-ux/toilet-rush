@@ -85,7 +85,7 @@ if (isWindows) {
     '-resource:' + htmlFile + ',ToiletRush.Game.html', '-out:' + exeFile, path.join(__dirname, 'pc-launcher.cs')]);
   run('mono', [exeFile, '--self-test']);
 }
-const instructions = `TOILET RUSH — 집까지 참아라! v${version}\r\n\r\n1. ToiletRush.exe를 더블클릭하세요.\r\n2. PC의 기본 브라우저에서 게임이 열립니다. 게임 시작을 누르세요.\r\n3. A/D 또는 방향키: 이동, Space: 점프, Shift: 질주, E: 화장실, P/Esc: 일시정지.\r\n\r\n게임 데이터가 EXE 안에 들어 있어 다른 파일 없이 EXE 하나만 복사해도 됩니다.\r\n인터넷 연결, Node.js 설치, 관리자 권한이 필요하지 않습니다.\r\nWindows의 .NET Framework 4.x와 최신 PC 브라우저를 사용합니다.\r\n\r\n게임은 http://127.0.0.1:41731/ 에서 이 PC에만 제공됩니다.\r\n최고 기록은 이 주소를 여는 브라우저에 저장됩니다.\r\n다시 실행하면 기존 게임을 다시 엽니다.\r\n완전히 종료: 작업 표시줄 알림 영역의 게임 아이콘 우클릭 → 게임 완전히 종료.\r\n\r\nToiletRush.html은 EXE 없이 브라우저로 열 수 있는 단일 파일 대안입니다.\r\nHTML 직접 열기의 기록 저장 여부는 브라우저의 로컬 파일 정책에 따라 다릅니다.\r\n이 자체 제작 EXE에는 유료 코드 서명이 포함되어 있지 않습니다.\r\n\r\n소스: https://github.com/chanmini584-ux/toilet-rush\r\n`;
+const instructions = `TOILET RUSH — 집까지 참아라! v${version}\r\n\r\n1. ToiletRush.exe를 더블클릭하세요.\r\n2. PC의 기본 브라우저에서 게임이 열립니다. 게임 시작을 누르세요.\r\n3. A/D 또는 방향키: 이동, Space: 점프, Shift: 질주, E: 화장실, P/Esc: 일시정지.\r\n\r\n게임 데이터가 EXE 안에 들어 있어 다른 파일 없이 EXE 하나만 복사해도 됩니다.\r\n인터넷 연결, Node.js 설치, 관리자 권한이 필요하지 않습니다.\r\nWindows의 .NET Framework 4.x와 최신 PC 브라우저를 사용합니다.\r\n\r\n서버 없이 동작합니다. EXE는 게임 파일을 내 PC(%LOCALAPPDATA%\\ToiletRush)에 풀어 브라우저로 엽니다.\r\n최고 기록은 그 브라우저에 저장됩니다. 브라우저 탭을 닫으면 게임이 끝납니다.\r\nEXE가 막히면 ToiletRush.html을 더블클릭해도 같은 게임이 열립니다.\r\n`;
 fs.writeFileSync(path.join(staging, '사용방법.txt'), '\ufeff' + instructions.replace(/\r\n/g, '\n'), 'utf8');
 for (const file of ['ToiletRush.exe', 'ToiletRush.html', '사용방법.txt']) fs.copyFileSync(path.join(staging, file), path.join(output, file));
 const zip = path.join(output, 'ToiletRush-v' + version + '-win.zip');

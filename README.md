@@ -6,9 +6,9 @@
 
 ## 실행
 
-**Windows PC 실행 파일:** [ToiletRush.exe](releases/ToiletRush.exe)를 내려받아 더블클릭하세요. 게임 데이터가 EXE에 포함되어 있어 EXE 하나만 있어도 됩니다. PC의 기본 브라우저에서 게임이 열리며, 인터넷·Node.js 설치·관리자 권한이 필요하지 않습니다. [ZIP 묶음](releases/ToiletRush-v1.1.0-win.zip)과 [단일 HTML 파일](releases/ToiletRush.html)도 제공합니다.
+**Windows PC 실행 파일:** [ToiletRush.exe](releases/ToiletRush.exe)를 내려받아 더블클릭하세요. 게임 데이터가 EXE에 포함되어 있어 EXE 하나만 있어도 됩니다. PC의 기본 브라우저에서 게임이 열리며, 인터넷·Node.js 설치·관리자 권한이 필요하지 않습니다. [ZIP 묶음](releases/ToiletRush-v1.2.1-win.zip)과 [단일 HTML 파일](releases/ToiletRush.html)도 제공합니다.
 
-EXE는 Windows .NET Framework 4.x와 최신 PC 브라우저를 사용합니다. 실행 중에는 이 PC의 `127.0.0.1:41731` 주소에만 게임을 제공합니다. 완전히 종료하려면 작업 표시줄 알림 영역의 게임 아이콘을 우클릭한 뒤 **게임 완전히 종료**를 선택하세요. 자세한 내용은 [PC 배포·검증 기록](docs/PC_RELEASE.md)을 참고하세요.
+EXE는 Windows .NET Framework 4.x와 최신 PC 브라우저를 사용합니다. EXE를 실행하면 게임 HTML이 `%LOCALAPPDATA%\ToiletRush\` 폴더에 풀리고 기본 브라우저에서 열립니다. 로컬 서버 없이 동작하므로 방화벽·포트 차단 걱정이 없습니다. EXE가 막힌다면 ZIP 안의 `ToiletRush.html`을 더블클릭해 바로 플레이할 수 있습니다. 자세한 내용은 [PC 배포·검증 기록](docs/PC_RELEASE.md)을 참고하세요.
 
 **가장 간단한 방법:** 저장소를 내려받아 `index.html`을 Chrome, Edge, Firefox 또는 Safari에서 엽니다. 게임 실행에는 Node.js나 별도 서버가 필요하지 않습니다. 브라우저가 로컬 파일 저장소를 제한하면 최고 기록은 저장되지 않을 수 있습니다.
 
@@ -73,6 +73,14 @@ npm run check
 | `tests/browser.js` | 명시적 QA URL의 실제 브라우저 통합 검증 |
 
 ## 작업 기록
+
+### 2026-11-11 · v1.2.1 (EXE 서버리스 전환)
+
+- EXE 런처를 로컬 TCP 서버 방식에서 **서버리스** 방식으로 전면 교체했습니다. 실행 시 HTML을 `%LOCALAPPDATA%\ToiletRush\`에 추출한 뒤 `Process.Start(UseShellExecute)` 로 기본 브라우저에서 엽니다. 포트 충돌·방화벽 차단 문제가 근본적으로 없어졌습니다.
+- EXE가 열리지 않을 경우 ZIP 안의 `ToiletRush.html`을 더블클릭해도 같은 게임이 실행됩니다.
+- README 및 `사용방법.txt` 안의 서버 주소 안내 문구를 삭제했습니다.
+- 검증(실행함): Node.js 단위 테스트 21개 통과, 구문 검사(`npm run check`) 통과, EXE 자체 테스트(`--self-test`) mono 환경에서 통과.
+- 검증(못 함): 실제 Windows 환경에서의 실행 및 플레이.
 
 ### 2026-11-11 · v1.2.0 (재디자인 2단계: 주인공 + 1구간 배경 + PC 빌드)
 
