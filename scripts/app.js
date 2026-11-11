@@ -365,9 +365,11 @@
   try { testMode = new URLSearchParams(location.search).get('test') === '1'; } catch {}
   if (testMode) {
     window.__rush = { engine, renderer, audio, tick, start: startGame, menu: mainMenu, sync: updateUI, refreshBest() { best = readBest(); }, setManual(value) { manualMode = !!value; }, clearInput, formatTime };
-    const qaScript = document.createElement('script');
-    qaScript.src = 'tests/browser.js';
-    document.head.append(qaScript);
+    if (!window.__RUSH_BUNDLED_QA__) {
+      const qaScript = document.createElement('script');
+      qaScript.src = 'tests/browser.js';
+      document.head.append(qaScript);
+    }
   }
   updateUI();
   renderer.render(engine, 0);

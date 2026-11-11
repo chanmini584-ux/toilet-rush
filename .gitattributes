@@ -1,0 +1,4 @@
+releases/* -text linguist-generated=true
+*.exe binary
+*.zip binary
+*.png binary

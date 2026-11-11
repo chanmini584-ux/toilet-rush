@@ -6,6 +6,10 @@
 
 ## 실행
 
+**Windows PC 실행 파일:** [ToiletRush.exe](releases/ToiletRush.exe)를 내려받아 더블클릭하세요. 게임 데이터가 EXE에 포함되어 있어 EXE 하나만 있어도 됩니다. PC의 기본 브라우저에서 게임이 열리며, 인터넷·Node.js 설치·관리자 권한이 필요하지 않습니다. [ZIP 묶음](releases/ToiletRush-v1.1.0-win.zip)과 [단일 HTML 파일](releases/ToiletRush.html)도 제공합니다.
+
+EXE는 Windows .NET Framework 4.x와 최신 PC 브라우저를 사용합니다. 실행 중에는 이 PC의 `127.0.0.1:41731` 주소에만 게임을 제공합니다. 완전히 종료하려면 작업 표시줄 알림 영역의 게임 아이콘을 우클릭한 뒤 **게임 완전히 종료**를 선택하세요. 자세한 내용은 [PC 배포·검증 기록](docs/PC_RELEASE.md)을 참고하세요.
+
 **가장 간단한 방법:** 저장소를 내려받아 `index.html`을 Chrome, Edge, Firefox 또는 Safari에서 엽니다. 게임 실행에는 Node.js나 별도 서버가 필요하지 않습니다. 브라우저가 로컬 파일 저장소를 제한하면 최고 기록은 저장되지 않을 수 있습니다.
 
 개발용 로컬 서버는 Node.js 18 이상에서 다음과 같이 실행합니다. 설치할 패키지는 없습니다.
@@ -69,6 +73,13 @@ npm run check
 | `tests/browser.js` | 명시적 QA URL의 실제 브라우저 통합 검증 |
 
 ## 작업 기록
+
+### 2026-11-11 · v1.1.0
+
+- 설치 없이 실행할 수 있는 Windows `ToiletRush.exe`, 단일 HTML, 배포용 ZIP을 추가했습니다.
+- 게임·스타일·사운드를 EXE에 내장하고, 고정 로컬 주소와 중복 실행 방지·알림 영역 종료 기능을 구현했습니다.
+- `npm run build:pc`로 외부 패키지 없이 Windows에서 빌드할 수 있습니다.
+- EXE가 제공하는 게임에서 브라우저 통합 22개, 코어 회귀 17개, ZIP 무결성·내장 HTML 일치 검사를 통과했습니다. 게임 디자인과 규칙은 기존 버전을 유지했습니다.
 
 ### 2026-11-10 · v1.0.0
 
