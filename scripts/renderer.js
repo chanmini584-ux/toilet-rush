@@ -400,6 +400,7 @@
     }
 
     drawCharacter(ctx, x, y, scale = 1, gauge = 25, pose = 'idle', time = 0, options = {}) {
+      if (!options.npc && root.RushHero && root.RushHero.POSES.has(pose)) return root.RushHero.draw(ctx, x, y, scale, gauge, pose, time, options);
       ctx.save(); ctx.translate(x, y); ctx.scale(scale * (options.facing || 1), scale);
       const inheritedAlpha = ctx.globalAlpha;
       const running = ['run', 'sprint', 'walk'].includes(pose);

@@ -17,7 +17,7 @@ function bundleHtml() {
   const favicon = Buffer.from(read('assets/favicon.svg')).toString('base64');
   html = html.replace('href="assets/favicon.svg"', 'href="data:image/svg+xml;base64,' + favicon + '"');
   html = html.replace('<link rel="stylesheet" href="styles.css">', '<style>\n' + read('styles.css') + '\n</style>');
-  const scripts = ['scripts/engine.js', 'scripts/renderer.js', 'scripts/audio.js', 'scripts/app.js'];
+  const scripts = ['scripts/engine.js', 'scripts/hero.js', 'scripts/renderer.js', 'scripts/audio.js', 'scripts/app.js'];
   for (const name of scripts) {
     const tag = '<script defer src="' + name + '"></script>';
     if (!html.includes(tag)) throw new Error('Expected script tag missing: ' + name);

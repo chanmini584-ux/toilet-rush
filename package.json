@@ -8,7 +8,7 @@
     "test": "node --test tests/*.test.cjs",
     "test:browser": "node tools/server.cjs",
     "build:pc": "node tools/build-pc.cjs",
-    "check": "node --check scripts/engine.js && node --check scripts/renderer.js && node --check scripts/audio.js && node --check scripts/app.js"
+    "check": "node --check scripts/engine.js && node --check scripts/hero.js && node --check scripts/renderer.js && node --check scripts/audio.js && node --check scripts/app.js"
   },
   "engines": {"node": ">=18"}
 }
