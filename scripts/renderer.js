@@ -49,11 +49,20 @@
   class RushRenderer {
     constructor(canvas) {
       this.canvas = canvas;
-      this.ctx = canvas.getContext('2d');
       this.time = 0;
       this.previousGauge = 25;
       this.width = 1280; this.height = 720;
       canvas.width = this.width; canvas.height = this.height;
+      // 저해상도 버퍼: 장면 전체를 작게 그린 뒤 확대해 픽셀아트 질감을 만든다
+      this.pixel = 3.2; // 버퍼 픽셀당 화면 픽셀 수(클수록 더 굵은 픽셀)
+      this.bw = Math.round(this.width / this.pixel); this.bh = Math.round(this.height / this.pixel);
+      const buf = (typeof document !== 'undefined' && document.createElement)
+        ? document.createElement('canvas')
+        : {getContext: () => canvas.getContext('2d'), width: 0, height: 0};
+      buf.width = this.bw; buf.height = this.bh;
+      this.buffer = buf;
+      this.ctx = buf.getContext('2d');
+      this.displayCtx = canvas.getContext('2d');
     }
 
     render(engine, dt = 1 / 60) {
@@ -62,8 +71,19 @@
       if (state !== 'PAUSED') this.time += Math.min(dt || 0, .1);
       const gauge = Number.isFinite(engine.displayGauge) ? engine.displayGauge : (engine.gauge || 25);
       this.previousGauge += (gauge - this.previousGauge) * Math.min(1, Math.max(dt, 1 / 60) * 12);
-      ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, this.width, this.height);
+      const sx = this.bw / this.width, sy = this.bh / this.height;
+      ctx.setTransform(sx, 0, 0, sy, 0, 0); ctx.clearRect(0, 0, this.width, this.height);
       ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      this._drawScene(engine, state, ctx);
+      // 버퍼를 선명한 확대(nearest-neighbor)로 실제 캔버스에 올린다
+      const d = this.displayCtx;
+      d.setTransform(1, 0, 0, 1, 0, 0);
+      d.imageSmoothingEnabled = false;
+      d.clearRect(0, 0, this.width, this.height);
+      if (this.buffer.width) d.drawImage(this.buffer, 0, 0, this.bw, this.bh, 0, 0, this.width, this.height);
+    }
+
+    _drawScene(engine, state, ctx) {
       if (state === 'MENU') { this.drawMenu(engine); return; }
       this.drawWorld(engine);
       if (state === 'SURVEY' || (state === 'PAUSED' && (engine.previousState === 'SURVEY' || engine.resumeState === 'SURVEY'))) this.drawSurvey();

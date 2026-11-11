@@ -6,7 +6,7 @@
 
 ## 실행
 
-**Windows PC 실행 파일:** [ToiletRush.exe](releases/ToiletRush.exe)를 내려받아 더블클릭하세요. 게임 데이터가 EXE에 포함되어 있어 EXE 하나만 있어도 됩니다. PC의 기본 브라우저에서 게임이 열리며, 인터넷·Node.js 설치·관리자 권한이 필요하지 않습니다. [ZIP 묶음](releases/ToiletRush-v1.2.2-win.zip)과 [단일 HTML 파일](releases/ToiletRush.html)도 제공합니다.
+**Windows PC 실행 파일:** [ToiletRush.exe](releases/ToiletRush.exe)를 내려받아 더블클릭하세요. 게임 데이터가 EXE에 포함되어 있어 EXE 하나만 있어도 됩니다. PC의 기본 브라우저에서 게임이 열리며, 인터넷·Node.js 설치·관리자 권한이 필요하지 않습니다. [ZIP 묶음](releases/ToiletRush-v1.2.3-win.zip)과 [단일 HTML 파일](releases/ToiletRush.html)도 제공합니다.
 
 EXE는 Windows .NET Framework 4.x와 최신 PC 브라우저를 사용합니다. EXE를 실행하면 게임 HTML이 `%LOCALAPPDATA%\ToiletRush\` 폴더에 풀리고 기본 브라우저에서 열립니다. 로컬 서버 없이 동작하므로 방화벽·포트 차단 걱정이 없습니다. EXE가 막힌다면 ZIP 안의 `ToiletRush.html`을 더블클릭해 바로 플레이할 수 있습니다. 자세한 내용은 [PC 배포·검증 기록](docs/PC_RELEASE.md)을 참고하세요.
 
@@ -73,6 +73,14 @@ npm run check
 | `tests/browser.js` | 명시적 QA URL의 실제 브라우저 통합 검증 |
 
 ## 작업 기록
+
+### 2026-11-12 · v1.2.3 (전체 화면 픽셀화 — 캐릭터 포함)
+
+- 배경만 픽셀이고 캐릭터·장애물·집·말풍선은 기존 벡터라 섞여 보이던 문제 해결. 장면 전체를 저해상도 버퍼(400×225, pixel=3.2)에 그린 뒤 nearest-neighbor로 확대해, 캐릭터를 포함한 모든 캔버스 요소가 동일한 픽셀 질감을 갖도록 함. 컷신·실패·승리 화면도 자동 적용.
+- `this.pixel` 값 하나로 픽셀 굵기 조절 가능.
+- HUD는 HTML 오버레이라 선명하게 유지.
+- 검증(실행함): 테스트 21개 통과, 구문 검사 통과, 헤드리스 Chrome으로 메뉴·플레이 렌더 확인(오류 0). EXE 실제 Windows 실행은 미검증.
+- 한계: 캔버스 내 한글 말풍선·간판이 픽셀화로 가독성이 다소 낮아짐(픽셀 굵기 조절로 완화 가능).
 
 ### 2026-11-12 · v1.2.2 (픽셀아트 밤 거리 오버홀)
 
